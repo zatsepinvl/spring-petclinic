@@ -19,6 +19,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.StringUtils;
@@ -45,6 +47,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 class PetController {
 
 	private static final String VIEWS_PETS_CREATE_OR_UPDATE_FORM = "pets/createOrUpdatePetForm";
+
+	private static final Logger logger = LoggerFactory.getLogger(PetController.class);
 
 	private final OwnerRepository owners;
 
@@ -114,6 +118,8 @@ class PetController {
 
 		owner.addPet(pet);
 		this.owners.save(owner);
+		logger.info("Created new pet: id={}, name={}, type={}, owner={}", pet.getId(), pet.getName(),
+			pet.getType().getName(), owner.getLastName() + ", " + owner.getFirstName());
 		redirectAttributes.addFlashAttribute("message", "New Pet has been Added");
 		return "redirect:/owners/{ownerId}";
 	}
@@ -158,14 +164,17 @@ class PetController {
 	 */
 	private void updatePetDetails(Owner owner, Pet pet) {
 		Pet existingPet = owner.getPet(pet.getId());
-		if (existingPet != null) {
+		// FIXME: bug introduced here
+		if (existingPet == null) {
 			// Update existing pet's properties
 			existingPet.setName(pet.getName());
 			existingPet.setBirthDate(pet.getBirthDate());
 			existingPet.setType(pet.getType());
+			logger.info("Updated pet: id={}, name={}, type={}", existingPet.getId(), existingPet.getName(), existingPet.getType().getName());
 		}
 		else {
 			owner.addPet(pet);
+			logger.info("Added new pet: name={}, type={}", pet.getName(), pet.getType().getName());
 		}
 		this.owners.save(owner);
 	}
